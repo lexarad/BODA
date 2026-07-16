@@ -98,8 +98,8 @@ function actualitzarSeguiment() {
         // Si hi ha preu (nou o ja anotat) puja a "Pressupost rebut"; si no, "Resposta rebuda".
         // Mai degrada un estat de pressupost ja assolit.
         const tePreu = Boolean(preu || (C.PRESSUPOST && fila[C.PRESSUPOST - 1]));
-        const nouEstat = tePreu ? '💶 Pressupost rebut' : '💬 Resposta rebuda';
-        if (estat !== nouEstat && !(nouEstat === '💬 Resposta rebuda' && /Pressupost/i.test(estat)))
+        const nouEstat = tePreu ? 'Pressupost rebut' : 'Resposta rebuda';
+        if (estat !== nouEstat && !(nouEstat === 'Resposta rebuda' && /Pressupost/i.test(estat)))
           setCell(C.ESTAT, nouEstat);
 
         if (!fila[C.DATA - 1])
@@ -111,7 +111,7 @@ function actualitzarSeguiment() {
         }
       } else if (enviat && /enviar|esborrany/i.test(estat)) {
         // Només si hi ha un correu realment enviat (els esborranys no compten).
-        setCell(C.ESTAT, '📤 Enviat');
+        setCell(C.ESTAT, 'Enviat');
       }
     } catch (e) {
       errors++;
