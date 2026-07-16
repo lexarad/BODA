@@ -1,0 +1,12 @@
+{
+  "name": "boda-seguiment-pressupostos",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Panell de seguiment de pressupostos de foto i vídeo per a la boda de Víctor & Victoria (Mas Sant Lleí, 15/05/2027)",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1"
+  }
+}
