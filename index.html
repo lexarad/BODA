@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="color-scheme" content="light dark" />
+<title>Seguiment de pressupostos · Foto i Vídeo · Boda Víctor &amp; Victoria</title>
+<style>
+  :root{
+    --bg:#faf7f2; --card:#ffffff; --ink:#2b2b2b; --muted:#7c7468;
+    --line:#e7e0d6; --line-soft:#f1ebe2; --accent:#9c6b4f; --accent-soft:#f0e6dd;
+    --thead:#f3ece2; --thead-ink:#6b6356; --hover:#fcfaf6;
+    --foto:#2e63c4; --video:#7a4fc0; --ambdos:#0e7d4a;
+    --pend:#8f6a06; --sent:#205fae; --resp:#7a3ea1; --quote:#0b6e41; --fav:#0e7d4a; --drop:#a13a2a;
+    --b-foto-bg:#e8f0fc; --b-foto-line:#cfe0fa;
+    --b-video-bg:#f1eafb; --b-video-line:#e0d2f5;
+    --b-ambdos-bg:#e3f5ec; --b-ambdos-line:#c6ecd7;
+    --rec-bg:#fbeede; --rec-ink:#9c6b4f; --rec-line:#ecd9c4;
+    --lang-bg:#f7f2ea;
+    --hero-top:#ffffff; --hero-bottom:#fbf8f3;
+    --shadow:0 1px 3px rgba(0,0,0,.06),0 6px 24px rgba(60,40,20,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#181410; --card:#221d18; --ink:#ece5da; --muted:#a89c8c;
+      --line:#3a332a; --line-soft:#2e2820; --accent:#c99771; --accent-soft:#33291f;
+      --thead:#2a241d; --thead-ink:#b0a494; --hover:#282218;
+      --foto:#8ab4f8; --video:#c5a3f0; --ambdos:#5fd39a;
+      --pend:#d9a521; --sent:#6ea8ef; --resp:#c08fe0; --quote:#3dbf83; --fav:#3dbf83; --drop:#e0705c;
+      --b-foto-bg:#1d2a40; --b-foto-line:#2c3f5e;
+      --b-video-bg:#2a2338; --b-video-line:#3d3355;
+      --b-ambdos-bg:#173226; --b-ambdos-line:#245239;
+      --rec-bg:#33291f; --rec-ink:#d8a87f; --rec-line:#4a3a29;
+      --lang-bg:#2a241d;
+      --hero-top:#221d18; --hero-bottom:#181410;
+      --shadow:0 1px 3px rgba(0,0,0,.4),0 6px 24px rgba(0,0,0,.35);
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+       background:var(--bg);color:var(--ink);line-height:1.45;-webkit-font-smoothing:antialiased}
+  header.hero{padding:28px 22px 18px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--hero-top),var(--hero-bottom))}
+  .hero h1{margin:0 0 4px;font-family:Georgia,"Times New Roman",serif;font-weight:600;font-size:1.7rem;letter-spacing:.2px}
+  .hero .sub{color:var(--muted);font-size:.96rem}
+  .hero .meta{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.9rem;color:var(--muted)}
+  .hero .meta b{color:var(--ink)}
+  .wrap{max-width:1280px;margin:0 auto;padding:18px 16px 60px}
+  /* dashboard */
+  .dash{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin:6px 0 18px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;box-shadow:var(--shadow)}
+  .stat .n{font-size:1.6rem;font-weight:700;line-height:1}
+  .stat.money .n{font-size:1.15rem;padding-top:6px}
+  .stat .l{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-top:6px}
+  .stat.total .n{color:var(--ink)}.stat.pend .n{color:var(--pend)}.stat.sent .n{color:var(--sent)}
+  .stat.resp .n{color:var(--resp)}.stat.quote .n{color:var(--quote)}.stat.fav .n{color:var(--fav)}.stat.drop .n{color:var(--drop)}
+  .stat.money .n{color:var(--quote)}
+  /* toolbar */
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+  .toolbar input[type=search]{flex:1;min-width:200px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;font-size:.92rem;background:var(--card);color:var(--ink)}
+  .toolbar select,.btn{padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font-size:.9rem;cursor:pointer}
+  .btn:hover{background:var(--accent-soft)}
+  .hint{font-size:.82rem;color:var(--muted);margin:-6px 0 14px}
+  /* table */
+  /* overflow:clip (i no hidden) perquè el thead sticky funcioni respecte a la pàgina */
+  .tablecard{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);overflow:clip}
+  table{width:100%;border-collapse:collapse;font-size:.88rem}
+  thead th{position:sticky;top:0;background:var(--thead);text-align:left;padding:11px 10px;font-size:.72rem;
+           text-transform:uppercase;letter-spacing:.05em;color:var(--thead-ink);border-bottom:1px solid var(--line);white-space:nowrap}
+  tbody td{padding:10px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  tbody tr:hover{background:var(--hover)}
+  tbody tr.dropped{opacity:.55}
+  .who{font-weight:600;color:var(--ink)}
+  .city{font-size:.8rem;color:var(--muted)}
+  .rec{display:inline-block;margin-left:6px;font-size:.65rem;background:var(--rec-bg);color:var(--rec-ink);border:1px solid var(--rec-line);border-radius:6px;padding:1px 5px;vertical-align:middle}
+  .badge{display:inline-block;font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:20px;border:1px solid transparent;white-space:nowrap}
+  .b-foto{background:var(--b-foto-bg);color:var(--foto);border-color:var(--b-foto-line)}
+  .b-video{background:var(--b-video-bg);color:var(--video);border-color:var(--b-video-line)}
+  .b-ambdos{background:var(--b-ambdos-bg);color:var(--ambdos);border-color:var(--b-ambdos-line)}
+  .lang{font-size:.7rem;font-weight:700;border-radius:6px;padding:1px 6px;border:1px solid var(--line);color:var(--thead-ink);background:var(--lang-bg)}
+  .contact a{color:var(--accent);text-decoration:none}
+  .contact a:hover{text-decoration:underline}
+  .contact .row{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px}
+  .muted{color:var(--muted)}
+  td.editable select,td.editable input{width:100%;border:1px solid var(--line);border-radius:8px;padding:6px 7px;font:inherit;background:var(--card);color:var(--ink)}
+  td.st select{font-weight:600}
+  input.quote{text-align:right}
+  textarea.notes{width:100%;min-height:34px;border:1px solid var(--line);border-radius:8px;padding:6px 7px;font:inherit;resize:vertical;background:var(--card);color:var(--ink)}
+  .savedflash{outline:2px solid #9ed3b4 !important;transition:outline .2s}
+  footer{margin-top:26px;font-size:.82rem;color:var(--muted);text-align:center;line-height:1.7}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin:12px 2px 0;font-size:.78rem;color:var(--thead-ink)}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+  @media (max-width:720px){
+    .contact .row{max-width:150px}
+    thead{display:none}
+    table,tbody,tr,td{display:block;width:100%}
+    tbody tr{border-bottom:1px solid var(--line);padding:8px 4px}
+    tbody td{border:none;padding:5px 8px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 12px}
+    tbody td::before{content:attr(data-label);font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);flex:0 0 42%}
+    td.contact .row{flex:1 0 100%;max-width:100%}
+    td.editable select,td.editable input,textarea.notes{max-width:55%}
+  }
+  @media print{.toolbar,.hint,.btn{display:none}body{background:#fff;color:#2b2b2b}}
+</style>
+</head>
+<body>
+<header class="hero">
+  <h1>Seguiment de pressupostos · Foto&nbsp;i&nbsp;Vídeo</h1>
+  <div class="sub">Boda de <b>Víctor &amp; Victoria</b> — peticions de pressupost a fotògrafs i videògrafs</div>
+  <div class="meta">
+    <span>📅 <b>15 de maig de 2027</b> (dissabte)</span>
+    <span>📍 <b>Mas Sant Lleí</b></span>
+    <span>✉️ Respostes a <b>victorhh888@gmail.com</b> · CC <b>victoriaguinovart@gmail.com</b></span>
+    <span>🎯 Preferència: <b>pack foto + vídeo</b></span>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="dash" id="dash"></div>
+
+  <div class="toolbar">
+    <input type="search" id="search" placeholder="🔎 Cercar proveïdor, ciutat, email…" aria-label="Cercar proveïdor, ciutat o email" />
+    <select id="filterType" aria-label="Filtrar per tipus">
+      <option value="">Tots els tipus</option>
+      <option value="Ambdós">Foto + Vídeo</option>
+      <option value="Foto">Només foto</option>
+      <option value="Vídeo">Només vídeo</option>
+    </select>
+    <select id="filterStatus" aria-label="Filtrar per estat">
+      <option value="">Tots els estats</option>
+      <option value="pend">Esborrany / per enviar</option>
+      <option value="sent">Enviat</option>
+      <option value="resp">Resposta rebuda</option>
+      <option value="quote">Pressupost rebut</option>
+      <option value="fav">Finalista</option>
+      <option value="drop">Descartat</option>
+    </select>
+    <select id="sortBy" aria-label="Ordenar la llista">
+      <option value="">Ordre original</option>
+      <option value="quote">💶 Preu (més barat primer)</option>
+      <option value="status">Estat (finalistes primer)</option>
+      <option value="name">Nom (A→Z)</option>
+      <option value="type">Tipus</option>
+    </select>
+    <button class="btn" id="exportBtn">⬇️ Exportar dades</button>
+    <button class="btn" id="importBtn">⬆️ Importar</button>
+    <input type="file" id="importFile" accept="application/json" style="display:none" />
+    <button class="btn" id="csvBtn">📊 CSV</button>
+    <button class="btn" id="printBtn">🖨️ Imprimir</button>
+  </div>
+  <div class="hint">Els canvis (estat, pressupost, notes…) es desen automàticament en aquest navegador. Per compartir l'estat entre vosaltres, useu <b>Exportar</b> i passeu-vos el fitxer, o feu servir <b>Importar</b>. El botó <b>CSV</b> genera un fitxer llest per enganxar a Google Sheets.</div>
+
+  <div class="tablecard">
+    <table id="tbl">
+      <thead>
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">Proveïdor</th>
+          <th scope="col">Tipus</th>
+          <th scope="col">Contacte</th>
+          <th scope="col">Idioma</th>
+          <th scope="col">Estat</th>
+          <th scope="col">Pack foto+vídeo?</th>
+          <th scope="col">Pressupost</th>
+          <th scope="col">Notes</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="legend">
+    <span><i class="dot" style="background:var(--pend)"></i> Esborrany / per enviar</span>
+    <span><i class="dot" style="background:var(--sent)"></i> Enviat</span>
+    <span><i class="dot" style="background:var(--resp)"></i> Resposta rebuda</span>
+    <span><i class="dot" style="background:var(--quote)"></i> Pressupost rebut</span>
+    <span><i class="dot" style="background:var(--fav)"></i> Finalista</span>
+    <span><i class="dot" style="background:var(--drop)"></i> Descartat</span>
+  </div>
+
+  <section style="margin-top:30px">
+    <h2 style="font-family:Georgia,serif;font-weight:600;font-size:1.18rem;margin:0 0 4px">Alternatives en reserva</h2>
+    <p class="hint" style="margin:0 0 12px">Proveïdors amb email verificat que <b>no estan entre els 30 esborranys</b>. Si en voleu contactar algun, digueu-m'ho i us en preparo l'esborrany al moment.</p>
+    <div class="tablecard">
+      <table>
+        <thead><tr><th scope="col">Proveïdor</th><th scope="col">Tipus</th><th scope="col">Contacte</th><th scope="col">Ciutat</th></tr></thead>
+        <tbody>
+          <tr><td class="who" data-label="Proveïdor">Fotógrafo Boda Barcelona</td><td data-label="Tipus"><span class="badge b-ambdos">Foto+Vídeo</span></td><td class="contact" data-label="Contacte"><a href="mailto:info@fotografobodabarcelona.com">info@fotografobodabarcelona.com</a></td><td class="city" data-label="Ciutat">Barcelona</td></tr>
+          <tr><td class="who" data-label="Proveïdor">La Masia Moments</td><td data-label="Tipus"><span class="badge b-ambdos">Foto+Vídeo</span></td><td class="contact" data-label="Contacte"><a href="mailto:info@lamasiastudio.com">info@lamasiastudio.com</a></td><td class="city" data-label="Ciutat">L'Hospitalet de Llobregat</td></tr>
+          <tr><td class="who" data-label="Proveïdor">Eva Torres</td><td data-label="Tipus"><span class="badge b-ambdos">Foto+Vídeo</span></td><td class="contact" data-label="Contacte"><a href="mailto:foto@evatorres.com">foto@evatorres.com</a></td><td class="city" data-label="Ciutat">Mataró</td></tr>
+          <tr><td class="who" data-label="Proveïdor">Sara Lázaro</td><td data-label="Tipus"><span class="badge b-foto">Foto</span></td><td class="contact" data-label="Contacte"><a href="mailto:saralazarofotografia@gmail.com">saralazarofotografia@gmail.com</a></td><td class="city" data-label="Ciutat">Barcelona</td></tr>
+          <tr><td class="who" data-label="Proveïdor">Bianca Bloom</td><td data-label="Tipus"><span class="badge b-foto">Foto</span></td><td class="contact" data-label="Contacte"><a href="mailto:holabiancabloom@gmail.com">holabiancabloom@gmail.com</a></td><td class="city" data-label="Ciutat">Mollet del Vallès</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 style="font-family:Georgia,serif;font-weight:600;font-size:1.18rem;margin:22px 0 4px">Sense email públic — només formulari web</h2>
+    <p class="hint" style="margin:0 0 12px">Aquests no publiquen correu, així que <b>no he pogut deixar-ne esborrany</b>. Cal escriure'ls des del seu formulari web (us deixo l'enllaç directe).</p>
+    <div class="tablecard">
+      <table>
+        <thead><tr><th scope="col">Proveïdor</th><th scope="col">Tipus</th><th scope="col">Formulari</th><th scope="col">Ciutat</th><th scope="col">Telèfon</th></tr></thead>
+        <tbody>
+          <tr><td class="who" data-label="Proveïdor">Joan Cabes <span class="rec">★ recomanat finca</span></td><td data-label="Tipus"><span class="badge b-ambdos">Foto+Vídeo</span></td><td class="contact" data-label="Formulari"><a href="https://www.joancabes.com/lang/es/contacto" target="_blank" rel="noopener">joancabes.com · contacto</a></td><td class="city" data-label="Ciutat">Barcelona</td><td class="city" data-label="Telèfon">692 545 217</td></tr>
+          <tr><td class="who" data-label="Proveïdor">16nueve</td><td data-label="Tipus"><span class="badge b-ambdos">Foto+Vídeo</span></td><td class="contact" data-label="Formulari"><a href="https://www.16nueve.com/contacto/" target="_blank" rel="noopener">16nueve.com · contacto</a></td><td class="city" data-label="Ciutat">Barcelona</td><td class="city" data-label="Telèfon">—</td></tr>
+          <tr><td class="who" data-label="Proveïdor">Juan Fra Palos</td><td data-label="Tipus"><span class="badge b-ambdos">Foto+Vídeo</span></td><td class="contact" data-label="Formulari"><a href="https://www.juanfrapalos.com/contacto" target="_blank" rel="noopener">juanfrapalos.com · contacto</a></td><td class="city" data-label="Ciutat">Sabadell</td><td class="city" data-label="Telèfon">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <div>✉️ Les <b>30 peticions</b> estan preparades com a <b>esborranys a Gmail</b> de victorhh888@gmail.com (amb la Victoria en còpia), a punt d'enviar: només cal obrir-les, revisar-les i clicar «Enviar».</div>
+    <div style="margin-top:6px">Boda Víctor &amp; Victoria · 15 de maig de 2027 · Mas Sant Lleí</div>
+    <div id="updated" style="margin-top:6px"></div>
+  </footer>
+</div>
+
+<script>
+/* ===== Dades dels proveïdors (s'omplen al construir la pàgina) ===== */
+const VENDORS = [
+  {id:"v01",name:"David Griso",type:"Foto",email:"hola@davidgriso.com",web:"https://davidgriso.com",phone:"699 033 926",city:"Barcelona",lang:"es",recommended:true},
+  {id:"v02",name:"Escarlata Blanco",type:"Foto",email:"info@escarlatablanco.com",web:"https://www.escarlatablanco.com",phone:"625 625 719",city:"Barcelona",lang:"es",recommended:true},
+  {id:"v03",name:"Fran Gribodó",type:"Foto",email:"hola@frangribodo.com",web:"https://www.frangribodo.com",phone:"615 23 38 88",city:"Barcelona",lang:"es",recommended:true},
+  {id:"v04",name:"Audiovisuart",type:"Ambdós",email:"silvia@audiovisuart.com",web:"https://www.audiovisuart.com",phone:"687 141 133",city:"Barcelona (Gràcia)",lang:"ca",recommended:true},
+  {id:"v05",name:"Carles Figuerola",type:"Foto",email:"hello@carlesfiguerola.com",web:"https://www.carlesfiguerola.com",phone:"646 95 71 48",city:"Sant Quirze del Vallès",lang:"ca",recommended:true},
+  {id:"v06",name:"The Camera Obscura",type:"Ambdós",email:"info@thecameraobscura.net",web:"https://www.thecameraobscura.net",phone:"",city:"Blanes (Girona)",lang:"ca",recommended:false},
+  {id:"v07",name:"Keig Studio",type:"Ambdós",email:"contact@keig-studio.com",web:"https://keig-studio.com",phone:"",city:"Barcelona",lang:"es",recommended:false},
+  {id:"v08",name:"Inlove Studio",type:"Ambdós",email:"info@inlovestudio.es",web:"https://inlovestudio.es",phone:"",city:"Barcelona",lang:"es",recommended:false},
+  {id:"v09",name:"Super Weddings",type:"Ambdós",email:"info@super-weddings.com",web:"https://super-weddings.com",phone:"",city:"Barcelona",lang:"es",recommended:false},
+  {id:"v10",name:"PlayFiction",type:"Ambdós",email:"comunicacio@playfiction.com",web:"https://playfiction.com",phone:"",city:"Barcelona",lang:"ca",recommended:false},
+  {id:"v11",name:"All You Need Is Love Films",type:"Ambdós",email:"info@allyouneedislovefilms.com",web:"https://www.allyouneedislovefilms.com",phone:"",city:"Sitges (Barcelona)",lang:"es",recommended:false},
+  {id:"v12",name:"La Vie en Film",type:"Ambdós",email:"hola@lavieenfilm.com",web:"https://www.lavieenfilm.com",phone:"",city:"Barcelona",lang:"es",recommended:false},
+  {id:"v13",name:"Basilico Studio",type:"Ambdós",email:"info@basilicostudio.com",web:"https://basilicostudio.com",phone:"",city:"Mataró (Barcelona)",lang:"es",recommended:false},
+  {id:"v14",name:"Igloo (Estudi Fotogràfic i de Vídeo)",type:"Ambdós",email:"info@igloo.cat",web:"https://www.igloo.cat",phone:"",city:"Catalunya",lang:"ca",recommended:false},
+  {id:"v15",name:"The Visual Tales",type:"Ambdós",email:"vtstudiobcn@gmail.com",web:"https://www.thevisualtales.com",phone:"",city:"Barcelona",lang:"es",recommended:false},
+  {id:"v16",name:"El Fotograma",type:"Ambdós",email:"info@elfotograma.es",web:"https://www.elfotograma.es",phone:"",city:"Vilanova i la Geltrú (Barcelona)",lang:"es",recommended:false},
+  {id:"v17",name:"Valued Story",type:"Ambdós",email:"booking@valuedstory.es",web:"https://valuedstory.es",phone:"",city:"Barcelona",lang:"es",recommended:false},
+  {id:"v18",name:"Sunnydays Fotografia",type:"Ambdós",email:"info@sunnydaysfotografia.com",web:"https://sunnydaysfotografia.com",phone:"",city:"Barcelona",lang:"es",recommended:false},
+  {id:"v19",name:"Wabisabi Fotografia",type:"Ambdós",email:"infowabisabifotografia@gmail.com",web:"https://wabisabifotografia.com",phone:"",city:"Sant Quirze del Vallès",lang:"ca",recommended:false},
+  {id:"v20",name:"T Beat Creative",type:"Ambdós",email:"hola@tbeatcreative.com",web:"https://tbeatcreative.com",phone:"",city:"Sabadell",lang:"ca",recommended:false},
+  {id:"v21",name:"MS Fotografía",type:"Ambdós",email:"hello@ms-fotografia.com",web:"https://ms-fotografia.com",phone:"",city:"Sabadell",lang:"es",recommended:false},
+  {id:"v22",name:"Camacho Fotògrafs",type:"Ambdós",email:"camachofotografs@gmail.com",web:"https://www.camachofotografs.es",phone:"",city:"Mollet del Vallès",lang:"ca",recommended:false},
+  {id:"v23",name:"Carlos Félix Weddings",type:"Vídeo",email:"hola@carlosfelixweddings.com",web:"https://carlosfelixweddings.com",phone:"",city:"Barcelona",lang:"es",recommended:false},
+  {id:"v24",name:"Mireia Llum Films",type:"Vídeo",email:"info@mireiallumfilms.com",web:"https://www.mireiallumfilms.com",phone:"",city:"Barcelona",lang:"ca",recommended:false},
+  {id:"v25",name:"Jaume Casals Films",type:"Vídeo",email:"hola@jaumecasals.com",web:"https://www.jaumecasals.com",phone:"",city:"Barcelona",lang:"ca",recommended:false},
+  {id:"v26",name:"Vitott Produccions",type:"Vídeo",email:"info@vitottproduccions.com",web:"https://www.vitottproduccions.com",phone:"",city:"La Nou de Gaià (Tarragona)",lang:"ca",recommended:false},
+  {id:"v27",name:"Juanjo Vega",type:"Foto",email:"info@juanjovega.com",web:"https://juanjovega.com",phone:"",city:"Barcelona",lang:"es",recommended:false},
+  {id:"v28",name:"DQfoto (Yurian Quintanas)",type:"Foto",email:"yurian@dqfoto.com",web:"https://www.dqfoto.com",phone:"",city:"Tona (Barcelona)",lang:"es",recommended:false},
+  {id:"v29",name:"Marga Martí",type:"Foto",email:"info@margamarti.com",web:"https://www.margamarti.com",phone:"",city:"Barcelona",lang:"ca",recommended:false},
+  {id:"v30",name:"Blanco y Caramelo",type:"Foto",email:"hello@blancoycaramelo.com",web:"https://blancoycaramelo.com",phone:"",city:"Barcelona",lang:"es",recommended:false}
+];
+
+/* ===== Estat editable (localStorage) ===== */
+const LS_KEY = "boda_vendor_tracking_v1";
+const LS_META = LS_KEY + "_meta";
+const STATUS = {
+  pend:  {label:"🟡 Esborrany / per enviar", color:"var(--pend)"},
+  sent:  {label:"📤 Enviat",                  color:"var(--sent)"},
+  resp:  {label:"💬 Resposta rebuda",         color:"var(--resp)"},
+  quote: {label:"💶 Pressupost rebut",        color:"var(--quote)"},
+  fav:   {label:"⭐ Finalista",                color:"var(--fav)"},
+  drop:  {label:"❌ Descartat",                color:"var(--drop)"}
+};
+/* Només accepta entrades amb ids de proveïdor coneguts i camps del tipus esperat. */
+function sanitizeState(raw){
+  if(!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const out = {};
+  for(const v of VENDORS){
+    const e = raw[v.id];
+    if(!e || typeof e !== "object") continue;
+    out[v.id] = {
+      status: STATUS[e.status] ? e.status : "pend",
+      pack:   ["","Sí","No","Per confirmar"].includes(e.pack) ? e.pack : "",
+      quote:  e.quote == null ? "" : String(e.quote),
+      notes:  e.notes == null ? "" : String(e.notes)
+    };
+  }
+  return out;
+}
+function loadState(){
+  try{ return sanitizeState(JSON.parse(localStorage.getItem(LS_KEY))) || {}; }
+  catch(e){ return {}; }
+}
+function saveState(s){
+  try{
+    localStorage.setItem(LS_KEY, JSON.stringify(s));
+    localStorage.setItem(LS_META, JSON.stringify({savedAt:new Date().toISOString()}));
+  }catch(e){ /* mode privat o quota plena: seguim en memòria */ }
+  stampUpdated();
+}
+let state = loadState();
+function vstate(id){ return state[id] || (state[id] = {status:"pend", pack:"", quote:"", notes:""}); }
+
+const tbody = document.getElementById("tbody");
+const esc = s => (s==null?"":String(s)).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* Treu un número d'un camp de pressupost escrit a mà: "2.500 €", "1500,50", "2500.50", "2500-3000" → primer valor.
+   Un punt o coma seguits d'1-2 dígits al final es tracten com a decimals; la resta, com a separadors de milers. */
+function parseQuote(s){
+  if(s==null) return null;
+  const m = String(s).match(/\d[\d.,\s]*/);
+  if(!m) return null;
+  const num = m[0].replace(/\s+/g,"").replace(/[.,]+$/,"");
+  const dm = num.match(/^(.*?)[.,](\d{1,2})$/);
+  const intPart = (dm ? dm[1] : num).replace(/[.,]/g,"");
+  const n = parseFloat(intPart + (dm ? "."+dm[2] : ""));
+  return isFinite(n) && n>0 ? n : null;
+}
+const fmtEUR = n => n==null ? "—" : n.toLocaleString("ca-ES",{maximumFractionDigits:0}) + " €";
+
+function typeBadge(t){
+  const k = t==="Ambdós"?"b-ambdos":t==="Vídeo"?"b-video":"b-foto";
+  const lbl = t==="Ambdós"?"Foto+Vídeo":t;
+  return `<span class="badge ${k}">${lbl}</span>`;
+}
+function contactCell(v){
+  let h = "";
+  if(v.email){
+    h += `<span class="row">✉️ <a href="mailto:${esc(v.email)}">${esc(v.email)}</a></span>`;
+    h += `<span class="row">📥 <a href="https://mail.google.com/mail/u/0/#search/${encodeURIComponent(v.email)}" target="_blank" rel="noopener">obre el fil a Gmail</a></span>`;
+  } else {
+    h += `<span class="row muted">✉️ (sense email públic)</span>`;
+  }
+  if(v.web) h += `<span class="row">🔗 <a href="${esc(v.web)}" target="_blank" rel="noopener">${esc(v.web.replace(/^https?:\/\//,""))}</a></span>`;
+  if(v.phone) h += `<span class="row muted">📞 ${esc(v.phone)}</span>`;
+  return h;
+}
+/* Ordre segons el selector; conserva la numeració original de cada proveïdor. */
+const $sort = document.getElementById("sortBy");
+function sortedVendors(){
+  const mode = $sort.value;
+  const arr = VENDORS.map((v,i)=>({v,i}));
+  if(!mode) return arr;
+  const rank = {fav:0, quote:1, resp:2, sent:3, pend:4, drop:5};
+  arr.sort((a,b)=>{
+    if(mode==="name")   return a.v.name.localeCompare(b.v.name,"ca") || a.i-b.i;
+    if(mode==="type")   return a.v.type.localeCompare(b.v.type,"ca") || a.i-b.i;
+    if(mode==="status") return rank[vstate(a.v.id).status]-rank[vstate(b.v.id).status] || a.i-b.i;
+    if(mode==="quote"){
+      const qa=parseQuote(vstate(a.v.id).quote), qb=parseQuote(vstate(b.v.id).quote);
+      if(qa==null && qb==null) return a.i-b.i;
+      if(qa==null) return 1;
+      if(qb==null) return -1;
+      return qa-qb || a.i-b.i;
+    }
+    return a.i-b.i;
+  });
+  return arr;
+}
+function render(){
+  tbody.innerHTML = "";
+  sortedVendors().forEach(({v,i})=>{
+    const st = vstate(v.id);
+    const tr = document.createElement("tr");
+    tr.dataset.id = v.id;
+    tr.dataset.type = v.type;
+    tr.dataset.status = st.status;
+    if(st.status==="drop") tr.classList.add("dropped");
+    const statusOpts = Object.entries(STATUS).map(([k,o])=>
+      `<option value="${k}" ${st.status===k?"selected":""}>${o.label}</option>`).join("");
+    const packOpts = ["","Sí","No","Per confirmar"].map(o=>
+      `<option value="${o}" ${st.pack===o?"selected":""}>${o||"—"}</option>`).join("");
+    tr.innerHTML = `
+      <td data-label="#">${i+1}</td>
+      <td data-label="Proveïdor"><span class="who">${esc(v.name)}</span>${v.recommended?'<span class="rec">★ recomanat finca</span>':''}<br><span class="city">${esc(v.city||"")}</span></td>
+      <td data-label="Tipus">${typeBadge(v.type)}</td>
+      <td data-label="Contacte" class="contact">${contactCell(v)}</td>
+      <td data-label="Idioma"><span class="lang">${v.lang==="ca"?"CA":"ES"}</span></td>
+      <td data-label="Estat" class="editable st"><select data-f="status" aria-label="Estat de ${esc(v.name)}" style="color:${STATUS[st.status].color}">${statusOpts}</select></td>
+      <td data-label="Pack foto+vídeo?" class="editable"><select data-f="pack" aria-label="Pack foto i vídeo de ${esc(v.name)}">${packOpts}</select></td>
+      <td data-label="Pressupost" class="editable"><input data-f="quote" class="quote" placeholder="€" aria-label="Pressupost de ${esc(v.name)}" value="${esc(st.quote)}" /></td>
+      <td data-label="Notes" class="editable"><textarea data-f="notes" class="notes" placeholder="resposta, horaris, què inclou…" aria-label="Notes de ${esc(v.name)}">${esc(st.notes)}</textarea></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  bindEditors();
+  updateDash();
+  applyFilters();
+}
+function bindEditors(){
+  tbody.querySelectorAll("[data-f]").forEach(el=>{
+    el.addEventListener("change", onEdit);
+    if(el.tagName==="TEXTAREA"||el.classList.contains("quote")) el.addEventListener("input", onEdit);
+  });
+}
+function onEdit(e){
+  const el=e.target, tr=el.closest("tr"), id=tr.dataset.id, f=el.dataset.f;
+  const st=vstate(id); st[f]=el.value; saveState(state);
+  if(f==="status"){
+    el.style.color=STATUS[el.value].color; tr.dataset.status=el.value;
+    tr.classList.toggle("dropped", el.value==="drop");
+    updateDash(); applyFilters();
+  }
+  if(f==="quote") updateDash();
+  el.classList.add("savedflash"); setTimeout(()=>el.classList.remove("savedflash"),250);
+}
+function updateDash(){
+  const c={total:VENDORS.length,pend:0,sent:0,resp:0,quote:0,fav:0,drop:0};
+  VENDORS.forEach(v=>{const s=vstate(v.id).status; if(c[s]!==undefined)c[s]++;});
+  const quotes = VENDORS
+    .filter(v=>vstate(v.id).status!=="drop")
+    .map(v=>parseQuote(vstate(v.id).quote))
+    .filter(n=>n!=null);
+  const min = quotes.length ? Math.min(...quotes) : null;
+  const avg = quotes.length ? quotes.reduce((a,b)=>a+b,0)/quotes.length : null;
+  // "Amb resposta" agrupa resp+quote+fav per a la lectura ràpida
+  document.getElementById("dash").innerHTML = `
+    <div class="stat total"><div class="n">${c.total}</div><div class="l">Proveïdors</div></div>
+    <div class="stat pend"><div class="n">${c.pend}</div><div class="l">Per enviar</div></div>
+    <div class="stat sent"><div class="n">${c.sent}</div><div class="l">Enviats</div></div>
+    <div class="stat resp"><div class="n">${c.resp+c.quote+c.fav}</div><div class="l">Amb resposta</div></div>
+    <div class="stat quote"><div class="n">${c.quote+c.fav}</div><div class="l">Pressupost rebut</div></div>
+    <div class="stat fav"><div class="n">${c.fav}</div><div class="l">Finalistes</div></div>
+    <div class="stat drop"><div class="n">${c.drop}</div><div class="l">Descartats</div></div>
+    <div class="stat money" id="statMin"><div class="n">${fmtEUR(min)}</div><div class="l">Millor preu</div></div>
+    <div class="stat money" id="statAvg"><div class="n">${fmtEUR(avg)}</div><div class="l">Preu mitjà</div></div>`;
+}
+/* filters */
+const $search=document.getElementById("search"),$ft=document.getElementById("filterType"),$fs=document.getElementById("filterStatus");
+function applyFilters(){
+  const q=$search.value.trim().toLowerCase(),ft=$ft.value,fs=$fs.value;
+  tbody.querySelectorAll("tr").forEach(tr=>{
+    const v=VENDORS.find(x=>x.id===tr.dataset.id);
+    const hay=(v.name+" "+(v.city||"")+" "+(v.email||"")+" "+(v.web||"")).toLowerCase();
+    let ok=true;
+    if(q&&!hay.includes(q))ok=false;
+    if(ft&&tr.dataset.type!==ft)ok=false;
+    if(fs&&tr.dataset.status!==fs)ok=false;
+    tr.style.display=ok?"":"none";
+  });
+}
+[$search,$ft,$fs].forEach(el=>{el.addEventListener("input",applyFilters);el.addEventListener("change",applyFilters);});
+$sort.addEventListener("change",render);
+/* export / import / csv / print */
+function download(nom, mime, contingut){
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([contingut],{type:mime}));
+  a.download=nom; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+document.getElementById("exportBtn").onclick=()=>{
+  download("seguiment-pressupostos-boda.json","application/json",
+    JSON.stringify({savedAt:new Date().toISOString(),state},null,2));
+};
+document.getElementById("importBtn").onclick=()=>document.getElementById("importFile").click();
+document.getElementById("importFile").onchange=ev=>{
+  const f=ev.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const d=JSON.parse(r.result);
+      // Format d'exportació ({savedAt, state}) o un objecte d'estat directe.
+      const isExport = d && typeof d==="object" && !Array.isArray(d) && d.state && typeof d.state==="object";
+      const s=sanitizeState(isExport ? d.state : d);
+      if(!s || (!isExport && Object.keys(s).length===0)) throw new Error("format");
+      state=s; saveState(state); render();
+      alert("Dades importades ✔");
+    }catch(e){ alert("Fitxer no vàlid: ha de ser un JSON exportat des d'aquest panell."); }
+  };
+  r.readAsText(f);
+  ev.target.value="";
+};
+function csvEscape(s){
+  s=String(s??"");
+  // Evita que Sheets/Excel interpretin com a fórmula el text lliure (notes, pressupost…)
+  if(/^[=+\-@\t\r]/.test(s)) s="'"+s;
+  return /[";\n\r]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+}
+document.getElementById("csvBtn").onclick=()=>{
+  const rows=[["#","Proveïdor","Tipus","Ciutat","Email","Web","Telèfon","Idioma","Estat","Pack foto+vídeo","Pressupost","Notes"]];
+  VENDORS.forEach((v,i)=>{
+    const st=vstate(v.id);
+    rows.push([i+1,v.name,v.type==="Ambdós"?"Foto+Vídeo":v.type,v.city||"",v.email||"",v.web||"",v.phone||"",
+      v.lang.toUpperCase(),STATUS[st.status].label.replace(/^\S+\s/,""),st.pack,st.quote,st.notes]);
+  });
+  // BOM + punt i coma: s'obre bé a Excel/Sheets en configuració regional ca/es
+  download("seguiment-pressupostos-boda.csv","text/csv;charset=utf-8",
+    "\uFEFF"+rows.map(r=>r.map(csvEscape).join(";")).join("\r\n"));
+};
+document.getElementById("printBtn").onclick=()=>window.print();
+function stampUpdated(){
+  let t="";
+  try{
+    const m=JSON.parse(localStorage.getItem(LS_META));
+    if(m&&m.savedAt) t="Última edició en aquest dispositiu: "+new Date(m.savedAt).toLocaleString("ca-ES");
+  }catch(e){}
+  document.getElementById("updated").textContent=t;
+}
+render(); stampUpdated();
+</script>
+</body>
+</html>
