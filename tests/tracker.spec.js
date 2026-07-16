@@ -110,10 +110,27 @@ test('el cicle exportar→importar funciona també sense cap edició prèvia', a
   const fitxer = path.join(os.tmpdir(), 'boda-export-pristi.json');
   fs.copyFileSync(await download.path(), fitxer);
 
-  const missatge = new Promise(resolve => page.once('dialog', d => { resolve(d.message()); d.accept(); }));
+  const missatges = [];
+  page.on('dialog', d => { missatges.push(d.message()); d.accept(); });
   await page.locator('#importFile').setInputFiles(fitxer);
-  expect(await missatge).toContain('importades');
+  await expect.poll(() => missatges.length).toBeGreaterThanOrEqual(2);
+  expect(missatges[0]).toContain('substituirà');           // confirmació prèvia
+  expect(missatges.some(m => m.includes('importades'))).toBe(true);
   await expect(page.locator('.stat.pend .n')).toHaveText('30');
+});
+
+test("cancel·lar la confirmació d'importació NO toca l'estat local", async ({ page }) => {
+  await page.locator('#tbody tr[data-id="v01"] input.quote').fill('2222');
+  const fitxer = path.join(os.tmpdir(), 'boda-import-cancel.json');
+  fs.writeFileSync(fitxer, JSON.stringify({ state: { v02: { status: 'fav', pack: '', quote: '9', notes: '' } } }));
+
+  let dialegs = 0;
+  page.on('dialog', d => { dialegs++; d.dismiss(); });
+  await page.locator('#importFile').setInputFiles(fitxer);
+  await expect.poll(() => dialegs).toBeGreaterThanOrEqual(1);   // la confirmació ja ha sortit
+  // Sense confirmació, res no canvia: ni v02 importat ni v01 esborrat.
+  await expect(page.locator('#tbody tr[data-id="v02"] select[data-f="status"]')).toHaveValue('pend');
+  await expect(page.locator('#tbody tr[data-id="v01"] input.quote')).toHaveValue('2222');
 });
 
 test('importar substitueix del tot l\'estat editat anteriorment', async ({ page }) => {
@@ -241,4 +258,61 @@ test("els estats que escriu l'Apps Script coincideixen amb els del CSV del panel
   // Si el .gs escrivís variants pròpies (p. ex. amb emoji), la Sheet acabaria amb dos
   // valors diferents per al mateix estat i els filtres es trencarien.
   for (const e of escrits) expect(legals).toContain(e);
+});
+
+test('parseQuote entén rangs, IVA, recomptes i decimals com els escriu la gent', async ({ page }) => {
+  const casos = await page.evaluate(() => [
+    ['2500-3000', 2500],            // rang → extrem baix
+    ['1900–2100', 1900],            // rang amb guió llarg
+    ['IVA 21%, total 1950€', 1950], // el % no és el preu
+    ['2 fotògrafs 2500€', 2500],    // el recompte no és el preu
+    ['1 àlbum + 1900', 1900],       // sense €: mana el número gran
+    ['1.395 € + IVA', 1395],
+    ['1.500,50', 1500.5],           // coma decimal espanyola
+    ['2.500 €', 2500],
+    ['2500.50', 2500.5],
+    ['res a veure', null],
+  ].map(([txt, esperat]) => [txt, esperat, parseQuote(txt)]));
+  for (const [txt, esperat, obtingut] of casos) expect(obtingut, `parseQuote(${JSON.stringify(txt)})`).toBe(esperat);
+});
+
+test("editar el preu (o l'estat) amb l'ordenació activa reordena la llista en sortir del camp", async ({ page }) => {
+  await page.locator('#tbody tr[data-id="v01"] input.quote').fill('3000');
+  await page.locator('#tbody tr[data-id="v02"] input.quote').fill('1000');
+  await page.locator('#sortBy').selectOption('quote');
+  await expect(page.locator('#tbody tr[data-id]').first()).toHaveAttribute('data-id', 'v02');
+
+  // Corregim el preu de v01 per sota de v02: en perdre el focus, ha de pujar al capdamunt.
+  await page.locator('#tbody tr[data-id="v01"] input.quote').fill('500');
+  await page.locator('#tbody tr[data-id="v01"] input.quote').blur();
+  await expect(page.locator('#tbody tr[data-id]').first()).toHaveAttribute('data-id', 'v01');
+
+  // El mateix amb l'estat: marcar un finalista amb ordre per estat el puja a dalt.
+  await page.locator('#sortBy').selectOption('status');
+  await page.locator('#tbody tr[data-id="v07"] select[data-f="status"]').selectOption('fav');
+  await expect(page.locator('#tbody tr[data-id]').first()).toHaveAttribute('data-id', 'v07');
+});
+
+test('un filtre sense resultats mostra un missatge en lloc d\'una taula buida', async ({ page }) => {
+  await page.locator('#filterStatus').selectOption('fav');   // encara no hi ha finalistes
+  await expect(page.locator('#noresults')).toBeVisible();
+  await expect(page.locator('#noresults')).toContainText('Cap proveïdor');
+
+  await page.locator('#filterStatus').selectOption('');
+  await expect(page.locator('#noresults')).toHaveCount(0);
+});
+
+test('el CSV exporta les 6 etiquetes d\'estat exactes (sense emoji ni text partit)', async ({ page }) => {
+  const estats = ['sent', 'resp', 'quote', 'fav', 'drop'];
+  for (let i = 0; i < estats.length; i++)
+    await page.locator(`#tbody tr[data-id="v0${i + 2}"] select[data-f="status"]`).selectOption(estats[i]);
+
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.click('#csvBtn'),
+  ]);
+  const csv = fs.readFileSync(await download.path(), 'utf8');
+  const columna = new Set(csv.slice(1).split('\r\n').slice(1).filter(Boolean).map(l => l.split(';')[8]));
+  expect([...columna].sort()).toEqual(
+    ['Descartat', 'Enviat', 'Esborrany / per enviar', 'Finalista', 'Pressupost rebut', 'Resposta rebuda']);
 });

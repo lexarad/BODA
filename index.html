@@ -15,7 +15,7 @@
     --b-foto-bg:#e8f0fc; --b-foto-line:#cfe0fa;
     --b-video-bg:#f1eafb; --b-video-line:#e0d2f5;
     --b-ambdos-bg:#e3f5ec; --b-ambdos-line:#c6ecd7;
-    --rec-bg:#fbeede; --rec-ink:#9c6b4f; --rec-line:#ecd9c4;
+    --rec-bg:#fbeede; --rec-ink:#7a4f38; --rec-line:#ecd9c4; /* #7a4f38 sobre #fbeede ≈ 6:1 (AA text petit) */
     --lang-bg:#f7f2ea;
     --hero-top:#ffffff; --hero-bottom:#fbf8f3;
     --shadow:0 1px 3px rgba(0,0,0,.06),0 6px 24px rgba(60,40,20,.06);
@@ -294,17 +294,38 @@ function vstate(id){ return state[id] || (state[id] = {status:"pend", pack:"", q
 const tbody = document.getElementById("tbody");
 const esc = s => (s==null?"":String(s)).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
-/* Treu un número d'un camp de pressupost escrit a mà: "2.500 €", "1500,50", "2500.50", "2500-3000" → primer valor.
-   Un punt o coma seguits d'1-2 dígits al final es tracten com a decimals; la resta, com a separadors de milers. */
-function parseQuote(s){
-  if(s==null) return null;
-  const m = String(s).match(/\d[\d.,\s]*/);
-  if(!m) return null;
-  const num = m[0].replace(/\s+/g,"").replace(/[.,]+$/,"");
+/* Treu el preu d'un camp de pressupost escrit a mà. La gent hi escriu de tot
+   ("IVA 21%, total 1950€", "2 fotògrafs 2500€", "2500-3000"), així que agafar
+   el primer número corromp mínim/mitjana/ordenació. Regles, en ordre:
+     1) un rang "2500-3000" / "1900–2100" val pel seu extrem BAIX;
+     2) si hi ha imports enganxats a "€"/"eur", mana el més gran d'aquests;
+     3) si no, el número més gran del text.
+   Els números <100 només compten si no n'hi ha cap de ≥100 (així "IVA 21%" o
+   "2 fotògrafs" no es prenen mai per un preu de boda). Un punt o coma seguits
+   d'1-2 dígits al final són decimals; la resta, separadors de milers. */
+const NUM_RE = "\\d{1,3}(?:[.\\s]\\d{3})+(?:,\\d{1,2})?|\\d+(?:[.,]\\d{1,2})?";
+function quoteNum(tok){
+  const num = tok.replace(/\s+/g,"").replace(/[.,]+$/,"");
   const dm = num.match(/^(.*?)[.,](\d{1,2})$/);
   const intPart = (dm ? dm[1] : num).replace(/[.,]/g,"");
   const n = parseFloat(intPart + (dm ? "."+dm[2] : ""));
   return isFinite(n) && n>0 ? n : null;
+}
+function parseQuote(s){
+  if(s==null) return null;
+  const t = String(s);
+  const nums = [...t.matchAll(new RegExp(NUM_RE,"g"))].map(m=>quoteNum(m[0])).filter(n=>n!=null);
+  if(!nums.length) return null;
+  const floor = nums.some(n=>n>=100) ? 100 : 0;
+  const rang = t.match(new RegExp("("+NUM_RE+")\\s*[-–—]\\s*("+NUM_RE+")"));
+  if(rang){
+    const lo=quoteNum(rang[1]), hi=quoteNum(rang[2]);
+    if(lo!=null && hi!=null && lo<=hi && lo>=floor) return lo;
+  }
+  const eur = [...t.matchAll(new RegExp("("+NUM_RE+")\\s*(?:€|eur)|€\\s*("+NUM_RE+")","gi"))]
+    .map(m=>quoteNum(m[1]||m[2])).filter(n=>n!=null && n>=floor);
+  if(eur.length) return Math.max(...eur);
+  return Math.max(...nums.filter(n=>n>=floor));
 }
 const fmtEUR = n => n==null ? "—" : n.toLocaleString("ca-ES",{maximumFractionDigits:0}) + " €";
 
@@ -393,6 +414,10 @@ function onEdit(e){
   }
   if(f==="quote") updateDash();
   el.classList.add("savedflash"); setTimeout(()=>el.classList.remove("savedflash"),250);
+  // Si el camp editat és el criteri d'ordenació actiu, reordena en sortir del camp
+  // (a "change", mai a "input", per no robar el focus mentre s'escriu).
+  if(e.type==="change" && (($sort.value==="quote"&&f==="quote")||($sort.value==="status"&&f==="status")))
+    render();
 }
 function updateDash(){
   const c={total:VENDORS.length,pend:0,sent:0,resp:0,quote:0,fav:0,drop:0};
@@ -419,7 +444,8 @@ function updateDash(){
 const $search=document.getElementById("search"),$ft=document.getElementById("filterType"),$fs=document.getElementById("filterStatus");
 function applyFilters(){
   const q=$search.value.trim().toLowerCase(),ft=$ft.value,fs=$fs.value;
-  tbody.querySelectorAll("tr").forEach(tr=>{
+  let visibles=0;
+  tbody.querySelectorAll("tr[data-id]").forEach(tr=>{
     const v=VENDORS.find(x=>x.id===tr.dataset.id);
     const hay=(v.name+" "+(v.city||"")+" "+(v.email||"")+" "+(v.web||"")).toLowerCase();
     let ok=true;
@@ -427,7 +453,17 @@ function applyFilters(){
     if(ft&&tr.dataset.type!==ft)ok=false;
     if(fs&&tr.dataset.status!==fs)ok=false;
     tr.style.display=ok?"":"none";
+    if(ok)visibles++;
   });
+  // Taula buida sense explicació = por de "s'ha trencat / he perdut les dades".
+  let nr=document.getElementById("noresults");
+  if(visibles===0){
+    if(!nr){
+      nr=document.createElement("tr"); nr.id="noresults";
+      nr.innerHTML='<td colspan="9" class="muted" style="text-align:center;padding:22px 10px">Cap proveïdor coincideix amb el filtre o la cerca. Esborra el filtre per tornar-los a veure.</td>';
+      tbody.appendChild(nr);
+    }
+  } else if(nr) nr.remove();
 }
 [$search,$ft,$fs].forEach(el=>{el.addEventListener("input",applyFilters);el.addEventListener("change",applyFilters);});
 $sort.addEventListener("change",render);
@@ -452,6 +488,8 @@ document.getElementById("importFile").onchange=ev=>{
       const isExport = d && typeof d==="object" && !Array.isArray(d) && d.state && typeof d.state==="object";
       const s=sanitizeState(isExport ? d.state : d);
       if(!s || (!isExport && Object.keys(s).length===0)) throw new Error("format");
+      // Importar REEMPLAÇA tot l'estat local: demana confirmació abans de perdre res.
+      if(!confirm("Això substituirà el seguiment d'aquest dispositiu pel del fitxer importat. Continuar?")) return;
       state=s; saveState(state); render();
       alert("Dades importades ✔");
     }catch(e){ alert("Fitxer no vàlid: ha de ser un JSON exportat des d'aquest panell."); }
