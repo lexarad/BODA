@@ -8,6 +8,13 @@ const os = require('os');
 const PAGE = 'file://' + path.resolve(__dirname, '..', 'index.html');
 
 test.beforeEach(async ({ page }) => {
+  // Estat buit EXPLÍCIT ('{}'): desactiva el seed de primera obertura perquè aquests
+  // tests validen la mecànica del panell partint de zero. Condicional per no trepitjar
+  // l'estat que un test desa i espera retrobar després d'un reload.
+  await page.addInitScript(() => {
+    if (localStorage.getItem('boda_vendor_tracking_v1') === null)
+      localStorage.setItem('boda_vendor_tracking_v1', '{}');
+  });
   await page.goto(PAGE);
 });
 
@@ -315,4 +322,25 @@ test('el CSV exporta les 6 etiquetes d\'estat exactes (sense emoji ni text parti
   const columna = new Set(csv.slice(1).split('\r\n').slice(1).filter(Boolean).map(l => l.split(';')[8]));
   expect([...columna].sort()).toEqual(
     ['Descartat', 'Enviat', 'Esborrany / per enviar', 'Finalista', 'Pressupost rebut', 'Resposta rebuda']);
+});
+
+test("primera obertura sense res desat: arrenca amb l'estat real del seguiment (seed)", async ({ browser }) => {
+  const ctx = await browser.newContext();   // contexte net, sense l'estat buit del beforeEach
+  const p = await ctx.newPage();
+  await p.goto(PAGE);
+
+  // Recomptes de la fulla de seguiment del 16/07/2026: 8 enviats, 22 respostes
+  // (11 esperant decisió + 6 amb preu + 5 no disponibles), cap per enviar.
+  await expect(p.locator('.stat.pend .n')).toHaveText('0');
+  await expect(p.locator('.stat.sent .n')).toHaveText('8');
+  await expect(p.locator('.stat.resp .n')).toHaveText('17');   // amb resposta = resp+quote+fav
+  await expect(p.locator('.stat.quote .n')).toHaveText('6');
+  await expect(p.locator('.stat.drop .n')).toHaveText('5');
+  await expect(p.locator('#statMin .n')).toHaveText('1.395 €'); // Wabisabi, "des de 1.395 € + IVA"
+
+  // Les edicions posteriors persisteixen per sobre del seed.
+  await p.locator('#tbody tr[data-id="v01"] select[data-f="status"]').selectOption('fav');
+  await p.reload();
+  await expect(p.locator('#tbody tr[data-id="v01"] select[data-f="status"]')).toHaveValue('fav');
+  await ctx.close();
 });

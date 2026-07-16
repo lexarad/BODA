@@ -277,8 +277,47 @@ function sanitizeState(raw){
   }
   return out;
 }
+/* Estat de fàbrica (fulla de seguiment, 16/07/2026): 30 peticions enviades el 09/06,
+   22 respostes. S'aplica NOMÉS la primera vegada que s'obre el panell en un navegador
+   (quan no hi ha res desat); a partir d'aquí mana el que editeu vosaltres. */
+const SEED = {
+  v01:{status:"resp", pack:"Per confirmar", quote:"", notes:"[10/06] ✓ Data lliure. La Vannesa confirma disponibilitat per al 15/05/27 a Mas Sant Lleí."},
+  v02:{status:"quote",pack:"Per confirmar", quote:"2.100 €", notes:"[10/06] Fotògrafa de bodes fa +20 anys; naturalitat i proximitat."},
+  v03:{status:"sent", pack:"Per confirmar", quote:"", notes:""},
+  v04:{status:"sent", pack:"Sí", quote:"", notes:""},
+  v05:{status:"sent", pack:"Per confirmar", quote:"", notes:""},
+  v06:{status:"sent", pack:"Sí", quote:"", notes:""},
+  v07:{status:"resp", pack:"Sí", quote:"", notes:"[09/06] ✓ Data lliure i coneixen la finca. Han escrit 3 cops (09, 16 i 26/06): esperen resposta."},
+  v08:{status:"sent", pack:"Sí", quote:"", notes:""},
+  v09:{status:"resp", pack:"Sí", quote:"", notes:"[10/06] ✓ Data lliure (confirmen dissabte 15/05/27)."},
+  v10:{status:"quote",pack:"Sí", quote:"1.900–2.100 €", notes:"[10/06] Resposta simpàtica i propera; rang segons opcions."},
+  v11:{status:"sent", pack:"Sí", quote:"", notes:""},
+  v12:{status:"sent", pack:"Sí", quote:"", notes:""},
+  v13:{status:"resp", pack:"Sí", quote:"", notes:"[09/06] ✓ Data lliure (l'Stefi confirma disponibilitat)."},
+  v14:{status:"quote",pack:"Sí", quote:"2.600–4.235 €", notes:"[10/06] ⚠ Una altra parella pregunta per la MATEIXA data (sense confirmar): si interessa, respondre aviat."},
+  v15:{status:"drop", pack:"Sí", quote:"", notes:"[10/06] ✗ Data ja ocupada."},
+  v16:{status:"drop", pack:"Sí", quote:"", notes:"[10/06] ✗ Temporada 2027 tancada (recuperant-se d'un accident)."},
+  v17:{status:"sent", pack:"Sí", quote:"", notes:""},
+  v18:{status:"resp", pack:"Sí", quote:"", notes:"[09/06] ✓ Data lliure i coneix bé la finca. Va passar tarifes. 2n correu el 26/06 pendent de llegir."},
+  v19:{status:"quote",pack:"Sí", quote:"des de 1.395 € + IVA", notes:"[10/06] Envien col·leccions i preus de partida com a primera referència."},
+  v20:{status:"resp", pack:"Sí", quote:"", notes:"[09/06] ✓ Data lliure; pack complet amb àlbum A4, dron o postboda de regal."},
+  v21:{status:"resp", pack:"Sí", quote:"", notes:"[09/06] En Marc adjunta el dossier estàndard de tarifes."},
+  v22:{status:"quote",pack:"Sí", quote:"2.500 €", notes:"[15/06] Pack àlbum digital + vídeo; proposen concretar una visita."},
+  v23:{status:"drop", pack:"Per confirmar", quote:"", notes:"[09/06] ✗ Data ocupada per una altra parella."},
+  v24:{status:"drop", pack:"Per confirmar", quote:"", notes:"[10/06] ✗ Data ocupada (i els companys que recomanaria, també)."},
+  v25:{status:"drop", pack:"Per confirmar", quote:"", notes:"[09/06] ✗ Data ja reservada."},
+  v26:{status:"resp", pack:"Per confirmar", quote:"", notes:"[10/06] Treballen amb el fotògraf Carlos Sardà: cobreixen foto+vídeo conjuntament."},
+  v27:{status:"resp", pack:"Per confirmar", quote:"", notes:"[10/06] ✓ Data lliure; explica la seva manera de treballar."},
+  v28:{status:"quote",pack:"Per confirmar", quote:"2.000–2.500 €", notes:"[09/06] ✓ Data lliure («el tinc disponible»)."},
+  v29:{status:"resp", pack:"Per confirmar", quote:"", notes:"[09/06] ✓ Data lliure; proposa una videotrucada sense compromís."},
+  v30:{status:"resp", pack:"Per confirmar", quote:"", notes:"[10/06] ✓ Data lliure («SÍ! tinc la vostra data disponible»)."}
+};
 function loadState(){
-  try{ return sanitizeState(JSON.parse(localStorage.getItem(LS_KEY))) || {}; }
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw === null) return sanitizeState(SEED) || {};
+    return sanitizeState(JSON.parse(raw)) || {};
+  }
   catch(e){ return {}; }
 }
 function saveState(s){
