@@ -222,3 +222,23 @@ test('exporta un CSV amb BOM, capçalera i els 30 proveïdors', async ({ page })
   expect(linies[1]).toContain('David Griso');
   expect(linies[1]).toContain('2.500 €');
 });
+
+test("els estats que escriu l'Apps Script coincideixen amb els del CSV del panell", async ({ page }) => {
+  const gs = fs.readFileSync(path.resolve(__dirname, '..', 'apps-script', 'seguiment-boda.gs'), 'utf8');
+  // Estats que el .gs escriu a la columna "Estat" de la Google Sheet.
+  const escrits = [...gs.matchAll(/'([^'\n]*(?:Enviat|Resposta rebuda|Pressupost rebut)[^'\n]*)'/g)].map(m => m[1]);
+  expect(escrits.length).toBeGreaterThan(0);
+
+  // Estats que exporta el botó CSV (sense l'emoji, com fa el panell).
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.click('#csvBtn'),
+  ]);
+  const csv = fs.readFileSync(await download.path(), 'utf8');
+  const estatsCsv = new Set(csv.slice(1).split('\r\n').slice(1).filter(Boolean).map(l => l.split(';')[8]));
+  const legals = ['Esborrany / per enviar', 'Enviat', 'Resposta rebuda', 'Pressupost rebut', 'Finalista', 'Descartat'];
+  for (const e of estatsCsv) expect(legals).toContain(e);
+  // Si el .gs escrivís variants pròpies (p. ex. amb emoji), la Sheet acabaria amb dos
+  // valors diferents per al mateix estat i els filtres es trencarien.
+  for (const e of escrits) expect(legals).toContain(e);
+});
