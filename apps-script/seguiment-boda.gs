@@ -72,12 +72,14 @@ function actualitzarSeguiment() {
       const fils = GmailApp.search('subject:("' + ASSUMPTE + '") (to:' + email + ' OR from:' + email + ')', 0, 5);
       if (fils.length === 0) return;
 
-      let resp = null;       // últim missatge rebut DEL proveïdor
-      let enviat = false;    // hem enviat (no esborrany) algun correu del fil
+      let resp = null;             // últim missatge rebut DEL proveïdor
+      let enviat = false;          // hem enviat (no esborrany) algun correu del fil
+      const delProveidor = [];     // tots els seus missatges (el preu pot ser en un d'anterior)
       fils.forEach(function (fil) {
         fil.getMessages().forEach(function (m) {
           const esDelProveidor = m.getFrom().toLowerCase().indexOf(email.toLowerCase()) !== -1;
           if (esDelProveidor) {
+            delProveidor.push(m);
             if (!resp || m.getDate() > resp.getDate()) resp = m;
           } else if (!m.isDraft()) {
             enviat = true;
@@ -92,7 +94,12 @@ function actualitzarSeguiment() {
 
       if (resp) {
         const cos = resp.getPlainBody() || '';
-        const preu = extreuPreu(cos);
+        // El preu es busca del missatge més recent cap enrere: si l'última resposta és
+        // "perfecte, quedem així" sense xifra, encara trobem la del correu anterior.
+        delProveidor.sort(function (a, b) { return b.getDate() - a.getDate(); });
+        let preu = '';
+        for (let i = 0; i < delProveidor.length && !preu; i++)
+          preu = extreuPreu(delProveidor[i].getPlainBody() || '');
         if (preu && C.PRESSUPOST && !fila[C.PRESSUPOST - 1]) setCell(C.PRESSUPOST, preu);
 
         // Si hi ha preu (nou o ja anotat) puja a "Pressupost rebut"; si no, "Resposta rebuda".
@@ -127,17 +134,32 @@ function actualitzarSeguiment() {
  * Troba el primer import en euros PLAUSIBLE del text (entre 100 i 100.000 €):
  * "2.500 €", "€1500", "1.500,50 EUR", "1500 euros", "500€"…
  * Ignora imports petits previs (senyals, suplements: "50 € de pàrquing… total 1.800 €").
+ * Un rang amb € ("2.500-3.000 €") val pel seu extrem BAIX, el mateix criteri que el
+ * parseQuote del panell. Si el text diu "+ IVA" / "IVA no inclòs", ho anota al costat
+ * perquè no es compari un preu base amb un d'IVA inclòs sense saber-ho.
  * Retorna '' si no n'hi ha cap.
  */
 function extreuPreu(text) {
-  const re = /(?:€|\beur(?:os?)?\b)\s*(\d{1,3}(?:[.\s]\d{3})+(?:,\d{1,2})?|\d+(?:,\d{1,2})?)(?!\d)|(\d{1,3}(?:[.\s]\d{3})+(?:,\d{1,2})?|\d+(?:,\d{1,2})?)\s*(?:€|eur(?:os?)?\b)/gi;
+  const NUM = '\\d{1,3}(?:[.\\s]\\d{3})+(?:,\\d{1,2})?|\\d+(?:,\\d{1,2})?';
+  const rang = text.match(new RegExp('(?:€\\s*(' + NUM + ')|(' + NUM + '))\\s*[-–—]\\s*(?:' + NUM + ')\\s*(?:€|\\beur(?:os?)?\\b)', 'i'));
+  if (rang) {
+    const lo = parseFloat((rang[1] || rang[2]).replace(/[.\s]/g, '').replace(',', '.'));
+    if (isFinite(lo) && lo >= 100 && lo <= 100000) return formataPreu_(lo, text);
+  }
+  const re = new RegExp('(?:€|\\beur(?:os?)?\\b)\\s*(' + NUM + ')(?!\\d)|(' + NUM + ')\\s*(?:€|eur(?:os?)?\\b)', 'gi');
   let m;
   while ((m = re.exec(text)) !== null) {
     const n = parseFloat((m[1] || m[2]).replace(/[.\s]/g, '').replace(',', '.'));
-    if (isFinite(n) && n >= 100 && n <= 100000)
-      return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' €';
+    if (isFinite(n) && n >= 100 && n <= 100000) return formataPreu_(n, text);
   }
   return '';
+}
+
+/** Formata "2500" → "2.500 €" i hi afegeix " + IVA" si el text ho indica. */
+function formataPreu_(n, text) {
+  let s = String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' €';
+  if (/\+\s*iva|iva\s+no\s+incl|sense\s+iva|sin\s+iva|m[eé]s\s+iva/i.test(text)) s += ' + IVA';
+  return s;
 }
 
 function crearActivador() {
